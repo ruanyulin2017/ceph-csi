@@ -1,0 +1,69 @@
+ARG SRC_DIR="/go/src/github.com/ceph/ceph-csi/"
+ARG BASE_IMAGE
+
+FROM ${BASE_IMAGE} as builder
+
+LABEL stage="build"
+
+ARG CSI_IMAGE_NAME=quay.io/cephcsi/cephcsi
+ARG CSI_IMAGE_VERSION=canary
+ARG TARGETARCH
+ARG SRC_DIR
+ARG GIT_COMMIT
+ARG GOROOT=/usr/local/go
+
+COPY build.env /
+RUN cd /etc/yum.repos.d \
+ && mkdir bak \
+ && mv CentOS* bak \
+ && mv tcmu-runner.repo bak
+COPY CentOS-8-reg.repo /etc/yum.repos.d/CentOS-Linux-BaseOS.repo
+
+RUN source /build.env && \
+    ( test -n "${TARGETARCH}" && exit 0; echo -e "\n\nMissing GO_ARCH argument for building image, install Golang or run: make image-cephcsi GOARCH=amd64\n\n"; exit 1 ) && \
+    mkdir -p ${GOROOT} && \
+    curl https://storage.googleapis.com/golang/go${GOLANG_VERSION}.linux-${TARGETARCH}.tar.gz | tar xzf - -C ${GOROOT} --strip-components=1
+
+# test if the downloaded version of Golang works (different arch?)
+RUN ${GOROOT}/bin/go version && ${GOROOT}/bin/go env
+
+RUN dnf -y install \
+        librados-devel librbd-devel \
+        /usr/bin/cc \
+        make \
+        git \
+    && true
+
+ENV GOROOT=${GOROOT} \
+    GOPATH=/go \
+    CGO_ENABLED=1 \
+    GIT_COMMIT="${GIT_COMMIT}" \
+    ENV_CSI_IMAGE_VERSION="${CSI_IMAGE_VERSION}" \
+    ENV_CSI_IMAGE_NAME="${CSI_IMAGE_NAME}" \
+    PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
+
+
+WORKDIR ${SRC_DIR}
+
+# Copy source directories
+COPY . ${SRC_DIR}
+
+# Build executable
+RUN make cephcsi
+
+#-- Final container
+FROM ${BASE_IMAGE}
+
+ARG SRC_DIR
+
+LABEL maintainers="Ceph-CSI Authors" \
+    version=${CSI_IMAGE_VERSION} \
+    architecture=${TARGETARCH} \
+    description="Ceph-CSI Plugin"
+
+COPY --from=builder ${SRC_DIR}/_output/cephcsi /usr/local/bin/cephcsi
+
+# verify that all dynamically linked libraries are available
+RUN [ $(ldd /usr/local/bin/cephcsi | grep -c '=> not found') = '0' ]
+
+ENTRYPOINT ["/usr/local/bin/cephcsi"]
