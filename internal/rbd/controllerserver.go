@@ -109,7 +109,7 @@ func (cs *ControllerServer) validateVolumeReq(ctx context.Context, req *csi.Crea
 // request arguments for subsequent calls.
 func (cs *ControllerServer) parseVolCreateRequest(
 	ctx context.Context,
-	req *csi.CreateVolumeRequest) (*rbdVolume, error) {
+	req *csi.CreateVolumeRequest, cr *util.Credentials) (*rbdVolume, error) {
 	// TODO (sbezverk) Last check for not exceeding total storage capacity
 
 	// below capability check indicates that we support both {SINGLE_NODE or MULTI_NODE} WRITERs and the `isMultiWriter`
@@ -138,7 +138,7 @@ func (cs *ControllerServer) parseVolCreateRequest(
 		req.GetParameters(),
 		req.GetSecrets(),
 		isMultiWriter && isBlock,
-		false)
+		false, cr)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -258,7 +258,7 @@ func (cs *ControllerServer) CreateVolume(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	defer cr.DeleteCredentials()
-	rbdVol, err := cs.parseVolCreateRequest(ctx, req)
+	rbdVol, err := cs.parseVolCreateRequest(ctx, req, cr)
 	if err != nil {
 		return nil, err
 	}

@@ -1249,7 +1249,7 @@ func generateVolumeFromMapping(
 func genVolFromVolumeOptions(
 	ctx context.Context,
 	volOptions, credentials map[string]string,
-	disableInUseChecks, checkClusterIDMapping bool) (*rbdVolume, error) {
+	disableInUseChecks, checkClusterIDMapping bool, cr *util.Credentials) (*rbdVolume, error) {
 	var (
 		ok         bool
 		err        error
@@ -1257,9 +1257,80 @@ func genVolFromVolumeOptions(
 	)
 
 	rbdVol := &rbdVolume{}
-	rbdVol.Pool, ok = volOptions["pool"]
+	poolNames, ok := volOptions["pool"]
 	if !ok {
 		return nil, errors.New("missing required parameter pool")
+	}
+
+	stateMap := make(map[string]map[string]float64)
+	var minUsed float64 = 100
+	poolList := strings.Split(poolNames, ",")
+	for _, item := range poolList {
+		poolInfos := strings.Split(item, "/")
+		var clusterId string
+		var poolName string
+		if len(poolInfos) == 1 {
+			clusterId, err = util.GetClusterID(volOptions)
+			if err != nil {
+				return nil, err
+			}
+			poolName = poolInfos[0]
+		} else {
+			clusterId = poolInfos[0]
+			poolName = poolInfos[1]
+		}
+		monitors, clusterId, err := util.GetMonsAndClusterID(ctx, clusterId, checkClusterIDMapping)
+		if err != nil {
+			log.ErrorLog(ctx, "failed getting mons (%s)", err)
+			return nil, err
+		}
+		_, ok := stateMap[clusterId]
+		if !ok {
+			stateMap[clusterId] = make(map[string]float64)
+			rv := &rbdVolume{}
+			rv.Monitors = monitors
+			rv.ClusterID = clusterId
+			rv.Pool = poolName
+			rv.RadosNamespace, err = util.GetRadosNamespace(util.CsiConfigFile, rv.ClusterID)
+			if err != nil {
+				log.ErrorLog(ctx, "GetRadosNamespace: %v", err)
+				return nil, err
+			}
+			err = rv.Connect(cr)
+			if err != nil {
+				log.ErrorLog(ctx, "Connect: %v", err)
+				return nil, err
+			}
+			cephAdmin, err := rv.conn.GetCephAdmin()
+			if err != nil {
+				log.ErrorLog(ctx, "GetCephAdmin: %v", err)
+				return nil, err
+			}
+			poolStatus, err := cephAdmin.PoolStatus()
+			if err != nil {
+				log.ErrorLog(ctx, "PoolStatus: %v", err)
+				return nil, err
+			}
+			log.UsefulLog(ctx, "clusterId: %v", clusterId)
+			for _, poolItem := range poolStatus.Pools {
+				log.UsefulLog(ctx, "PoolStatus: %s %v", poolItem.Name, poolItem.Stats.PercentUsed)
+				stateMap[clusterId][poolItem.Name] = poolItem.Stats.PercentUsed
+			}
+		}
+
+		if used, ok := stateMap[clusterId][poolName]; ok {
+			if used < minUsed {
+				log.UsefulLog(ctx, "chose poolName: %s %v %s", poolName, used, clusterId)
+				rbdVol.Pool = poolName
+				rbdVol.Monitors = monitors
+				rbdVol.ClusterID = clusterId
+			}
+		} else {
+			log.UsefulLog(ctx, "poolName: %s not exist, stateMap: %v", poolName, stateMap)
+			rbdVol.Pool = poolName
+			rbdVol.Monitors = monitors
+			rbdVol.ClusterID = clusterId
+		}
 	}
 
 	rbdVol.DataPool = volOptions["dataPool"]
@@ -1267,16 +1338,16 @@ func genVolFromVolumeOptions(
 		rbdVol.NamePrefix = namePrefix
 	}
 
-	clusterID, err := util.GetClusterID(volOptions)
-	if err != nil {
-		return nil, err
-	}
-	rbdVol.Monitors, rbdVol.ClusterID, err = util.GetMonsAndClusterID(ctx, clusterID, checkClusterIDMapping)
-	if err != nil {
-		log.ErrorLog(ctx, "failed getting mons (%s)", err)
-
-		return nil, err
-	}
+	//clusterID, err := util.GetClusterID(volOptions)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//rbdVol.Monitors, rbdVol.ClusterID, err = util.GetMonsAndClusterID(ctx, clusterID, checkClusterIDMapping)
+	//if err != nil {
+	//	log.ErrorLog(ctx, "failed getting mons (%s)", err)
+	//
+	//	return nil, err
+	//}
 
 	rbdVol.RadosNamespace, err = util.GetRadosNamespace(util.CsiConfigFile, rbdVol.ClusterID)
 	if err != nil {

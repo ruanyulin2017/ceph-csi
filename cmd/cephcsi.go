@@ -23,19 +23,16 @@ import (
 	"runtime"
 	"time"
 
-	rbdv1 `github.com/ceph/ceph-csi/api/rbd/v1`
+	rbdv1 "github.com/ceph/ceph-csi/api/rbd/v1"
 	"github.com/ceph/ceph-csi/internal/cephfs"
 	"github.com/ceph/ceph-csi/internal/controller"
 	"github.com/ceph/ceph-csi/internal/controller/persistentvolume"
-	`github.com/ceph/ceph-csi/internal/controller/rbdbackup`
-	`github.com/ceph/ceph-csi/internal/controller/rbdrestore`
-	`github.com/ceph/ceph-csi/internal/controller/storageclass`
-	`github.com/ceph/ceph-csi/internal/controller/volumesnapshotcontents`
+	"github.com/ceph/ceph-csi/internal/controller/volumesnapshotcontents"
 	"github.com/ceph/ceph-csi/internal/liveness"
 	rbddriver "github.com/ceph/ceph-csi/internal/rbd/driver"
 	"github.com/ceph/ceph-csi/internal/util"
 	"github.com/ceph/ceph-csi/internal/util/log"
-	volsnapv1 `github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1`
+	volsnapv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
@@ -264,9 +261,9 @@ func initControllers() {
 	_ = volsnapv1.AddToScheme(scheme)
 	// Add list of controller here.
 	persistentvolume.Init()
-	rbdbackup.Init()
-	rbdrestore.Init()
-	storageclass.Init()
+	//rbdbackup.Init()
+	//rbdrestore.Init()
+	//storageclass.Init()
 	volumesnapshotcontents.Init()
 }
 
