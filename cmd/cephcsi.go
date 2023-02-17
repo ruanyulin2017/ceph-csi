@@ -245,7 +245,7 @@ func main() {
 		}
 		// initialize all controllers before starting.
 		initControllers()
-		err = controller.Start(cfg)
+		err = controller.Start(cfg, scheme)
 		if err != nil {
 			logAndExit(err.Error())
 		}
