@@ -1337,6 +1337,7 @@ func genVolFromVolumeOptions(
 					rbdVol.Pool = poolName
 					rbdVol.Monitors = monitors
 					rbdVol.ClusterID = clusterId
+					minUsed = used
 				}
 			} else {
 				log.UsefulLog(ctx, "poolName: %s not exist, stateMap: %v", poolName, stateMap)
