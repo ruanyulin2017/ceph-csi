@@ -131,11 +131,36 @@ func (cs *ControllerServer) parseVolCreateRequest(
 	if imageFeatures, ok := req.GetParameters()["imageFeatures"]; checkImageFeatures(imageFeatures, ok, true) {
 		return nil, status.Error(codes.InvalidArgument, "missing required parameter imageFeatures")
 	}
-
+	volOptions := req.GetParameters()
+	volumeSource := req.VolumeContentSource
+	if volumeSource != nil {
+		switch volumeSource.Type.(type) {
+		case *csi.VolumeContentSource_Snapshot:
+			snapshot := req.VolumeContentSource.GetSnapshot()
+			snapshotID := snapshot.GetSnapshotId()
+			var vi util.CSIIdentifier
+			err := vi.DecomposeCSIID(snapshotID)
+			if err != nil {
+				log.ErrorLog(ctx, "error decoding snapshot ID (%s) (%s)", err, snapshotID)
+				return nil, err
+			}
+			volOptions[util.ClusterIDKey] = vi.ClusterID
+			monitors, _, err := util.GetMonsAndClusterID(ctx, vi.ClusterID, false)
+			if err != nil {
+				log.ErrorLog(ctx, "failed getting mons (%s)", err)
+				return nil, err
+			}
+			pool, err := util.GetPoolName(monitors, cr, vi.LocationID)
+			if err != nil {
+				return nil, err
+			}
+			volOptions["pool"] = pool
+		}
+	}
 	// if it's NOT SINGLE_NODE_WRITER, and it's BLOCK we'll set the parameter to ignore the in-use checks
 	rbdVol, err := genVolFromVolumeOptions(
 		ctx,
-		req.GetParameters(),
+		volOptions,
 		req.GetSecrets(),
 		isMultiWriter && isBlock,
 		false, cr)

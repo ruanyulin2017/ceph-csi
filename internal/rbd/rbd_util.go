@@ -1434,11 +1434,11 @@ func genSnapFromOptions(ctx context.Context, rbdVol *rbdVolume, snapOptions map[
 	rbdSnap.JournalPool = rbdVol.JournalPool
 	rbdSnap.RadosNamespace = rbdVol.RadosNamespace
 
-	clusterID, err := util.GetClusterID(snapOptions)
-	if err != nil {
-		return nil, err
-	}
-	rbdSnap.Monitors, rbdSnap.ClusterID, err = util.GetMonsAndClusterID(ctx, clusterID, false)
+	//clusterID, err := util.GetClusterID(snapOptions)
+	//if err != nil {
+	//	return nil, err
+	//}
+	rbdSnap.Monitors, rbdSnap.ClusterID, err = util.GetMonsAndClusterID(ctx, rbdVol.ClusterID, false)
 	if err != nil {
 		log.ErrorLog(ctx, "failed getting mons (%s)", err)
 
