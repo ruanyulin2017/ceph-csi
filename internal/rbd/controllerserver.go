@@ -203,6 +203,7 @@ func buildCreateVolumeResponse(req *csi.CreateVolumeRequest, rbdVol *rbdVolume) 
 	volumeContext["pool"] = rbdVol.Pool
 	volumeContext["journalPool"] = rbdVol.JournalPool
 	volumeContext["imageName"] = rbdVol.RbdImageName
+	volumeContext["clusterID"] = rbdVol.ClusterID
 	if rbdVol.RadosNamespace != "" {
 		volumeContext["radosNamespace"] = rbdVol.RadosNamespace
 	}
