@@ -18,26 +18,16 @@ require (
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0
 	github.com/libopenstorage/secrets v0.0.0-20210908194121-a1d19aa9713a
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.19.0
 	github.com/pborman/uuid v1.2.1
-	github.com/prometheus/client_golang v1.12.2
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
 	google.golang.org/grpc v1.42.0
-	google.golang.org/protobuf v1.28.0
-	k8s.io/api v0.25.0
-	k8s.io/apimachinery v0.25.0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/cloud-provider v0.23.0
-	k8s.io/klog/v2 v2.70.1
 	//
 	// when updating k8s.io/kubernetes, make sure to update the replace section too
 	//
 	k8s.io/kubernetes v1.23.0
 	k8s.io/mount-utils v0.23.0
-	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
-	sigs.k8s.io/controller-runtime v0.13.1
 )
 
 require (
@@ -136,6 +126,39 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
+require (
+	github.com/onsi/gomega v1.19.0
+	github.com/prometheus/client_golang v1.12.2
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
+	google.golang.org/protobuf v1.28.0
+	k8s.io/api v0.25.0
+	k8s.io/apimachinery v0.25.0
+	k8s.io/klog/v2 v2.70.1
+	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
+	sigs.k8s.io/controller-runtime v0.13.1
+)
+
+require (
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
+	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/prometheus/common v0.32.1 // indirect
+	github.com/prometheus/procfs v0.7.3 // indirect
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
+	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
+	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
+	google.golang.org/genproto v0.0.0-20210924002016-3dee208752a0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/component-base v0.25.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
+	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
+)
+
 replace (
 	code.cloudfoundry.org/gofileutils => github.com/cloudfoundry/gofileutils v0.0.0-20170111115228-4d0c80011a0f
 	github.com/ceph/ceph-csi/api => ./api
@@ -161,6 +184,7 @@ replace (
 	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.23.0
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.23.0
 	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.23.0
+	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.23.0
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.23.0
 	k8s.io/kubectl => k8s.io/kubectl v0.23.0
@@ -172,6 +196,9 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.23.0
 	// layeh.com seems to be misbehaving
 	layeh.com/radius => github.com/layeh/radius v0.0.0-20190322222518-890bc1058917
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.11.0-beta.0.0.20211208212546-f236f0345ad2
+	sigs.k8s.io/json => sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6
+	sigs.k8s.io/structured-merge-diff/v4 => sigs.k8s.io/structured-merge-diff/v4 v4.2.0
 )
 
 exclude (

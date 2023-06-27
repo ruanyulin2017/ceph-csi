@@ -160,3 +160,11 @@ func (cc *ClusterConnection) DisableDiscardOnZeroedWriteSame() error {
 
 	return nil
 }
+
+func (cc *ClusterConnection) GetCephAdmin() (*CephAdmin, error) {
+	if cc.conn == nil {
+		return nil, errors.New("cluster is not connected yet")
+	}
+
+	return NewFromConn(cc.conn), nil
+}

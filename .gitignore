@@ -21,3 +21,6 @@ deploy/cephcsi/image/cephcsi
 
 # generated golangci-lint configuration
 scripts/golangci.yml
+.idea/ceph-csi.iml
+.idea/modules.xml
+.idea/workspace.xml

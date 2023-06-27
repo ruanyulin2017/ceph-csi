@@ -109,7 +109,7 @@ func (cs *ControllerServer) validateVolumeReq(ctx context.Context, req *csi.Crea
 // request arguments for subsequent calls.
 func (cs *ControllerServer) parseVolCreateRequest(
 	ctx context.Context,
-	req *csi.CreateVolumeRequest) (*rbdVolume, error) {
+	req *csi.CreateVolumeRequest, cr *util.Credentials) (*rbdVolume, error) {
 	// TODO (sbezverk) Last check for not exceeding total storage capacity
 
 	// below capability check indicates that we support both {SINGLE_NODE or MULTI_NODE} WRITERs and the `isMultiWriter`
@@ -131,14 +131,39 @@ func (cs *ControllerServer) parseVolCreateRequest(
 	if imageFeatures, ok := req.GetParameters()["imageFeatures"]; checkImageFeatures(imageFeatures, ok, true) {
 		return nil, status.Error(codes.InvalidArgument, "missing required parameter imageFeatures")
 	}
-
+	volOptions := req.GetParameters()
+	volumeSource := req.VolumeContentSource
+	if volumeSource != nil {
+		switch volumeSource.Type.(type) {
+		case *csi.VolumeContentSource_Snapshot:
+			snapshot := req.VolumeContentSource.GetSnapshot()
+			snapshotID := snapshot.GetSnapshotId()
+			var vi util.CSIIdentifier
+			err := vi.DecomposeCSIID(snapshotID)
+			if err != nil {
+				log.ErrorLog(ctx, "error decoding snapshot ID (%s) (%s)", err, snapshotID)
+				return nil, err
+			}
+			volOptions[util.ClusterIDKey] = vi.ClusterID
+			monitors, _, err := util.GetMonsAndClusterID(ctx, vi.ClusterID, false)
+			if err != nil {
+				log.ErrorLog(ctx, "failed getting mons (%s)", err)
+				return nil, err
+			}
+			pool, err := util.GetPoolName(monitors, cr, vi.LocationID)
+			if err != nil {
+				return nil, err
+			}
+			volOptions["pool"] = pool
+		}
+	}
 	// if it's NOT SINGLE_NODE_WRITER, and it's BLOCK we'll set the parameter to ignore the in-use checks
 	rbdVol, err := genVolFromVolumeOptions(
 		ctx,
-		req.GetParameters(),
+		volOptions,
 		req.GetSecrets(),
 		isMultiWriter && isBlock,
-		false)
+		false, cr)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -178,6 +203,7 @@ func buildCreateVolumeResponse(req *csi.CreateVolumeRequest, rbdVol *rbdVolume) 
 	volumeContext["pool"] = rbdVol.Pool
 	volumeContext["journalPool"] = rbdVol.JournalPool
 	volumeContext["imageName"] = rbdVol.RbdImageName
+	volumeContext["clusterID"] = rbdVol.ClusterID
 	if rbdVol.RadosNamespace != "" {
 		volumeContext["radosNamespace"] = rbdVol.RadosNamespace
 	}
@@ -258,7 +284,7 @@ func (cs *ControllerServer) CreateVolume(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	defer cr.DeleteCredentials()
-	rbdVol, err := cs.parseVolCreateRequest(ctx, req)
+	rbdVol, err := cs.parseVolCreateRequest(ctx, req, cr)
 	if err != nil {
 		return nil, err
 	}
