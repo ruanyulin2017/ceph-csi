@@ -3,16 +3,18 @@ package volumesnapshotcontents
 import (
 	"context"
 	"fmt"
-	"github.com/ceph/ceph-csi/internal/util/log"
 	"time"
 
-	"github.com/ceph/ceph-csi/internal/rbd"
+	"github.com/ceph/ceph-csi/internal/util/log"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"github.com/ceph/ceph-csi/internal/rbd"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
@@ -122,11 +124,6 @@ func (r *ReconcileVolumeSnapshotContents) Reconcile(ctx context.Context, request
 		return reconcile.Result{}, nil
 	}
 	defer cr.DeleteCredentials()
-	monitors, _, err := util.FetchMappedClusterIDAndMons(ctx, r.config.ClusterId)
-	if err != nil {
-		log.ErrorLog(ctx, "%s FetchMappedClusterIDAndMons failed, err:%s", request.NamespacedName, err.Error())
-		return reconcile.Result{}, err
-	}
 	//  根据volume id 生成 vol
 	var vi util.CSIIdentifier
 	err = vi.DecomposeCSIID(volID)
@@ -134,12 +131,17 @@ func (r *ReconcileVolumeSnapshotContents) Reconcile(ctx context.Context, request
 		log.ErrorLog(ctx, "%s error decoding volume ID (%s) (%s)", request.NamespacedName, err, volID)
 		return reconcile.Result{}, nil
 	}
+	monitors, _, err := util.FetchMappedClusterIDAndMons(ctx, vi.ClusterID)
+	if err != nil {
+		log.ErrorLog(ctx, "%s FetchMappedClusterIDAndMons failed, err:%s", request.NamespacedName, err.Error())
+		return reconcile.Result{}, nil
+	}
 	pool, err := util.GetPoolName(monitors, cr, vi.LocationID)
 	if err != nil {
 		log.ErrorLog(ctx, "%s GetPoolName failed (%s) (%s)", request.NamespacedName, err, volID)
 		return reconcile.Result{}, nil
 	}
-	vol := rbd.NewRbdVol(pool, monitors, r.config.ClusterId, "csi-vol-"+vi.ObjectUUID)
+	vol := rbd.NewRbdVol(pool, monitors, vi.ClusterID, "csi-vol-"+vi.ObjectUUID)
 	//  根据snap id  获取 snapshotName
 	var snapvi util.CSIIdentifier
 	err = snapvi.DecomposeCSIID(snapID)

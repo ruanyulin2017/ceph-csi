@@ -18,6 +18,7 @@ package rbd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ceph/ceph-csi/internal/journal"
 )
@@ -49,6 +50,9 @@ var (
 
 	// krbd features supported by the loaded driver.
 	krbdFeatures uint
+
+	// delete delay
+	deleteDelay time.Duration
 )
 
 // SetGlobalInt provides a way for the rbd-driver to configure global variables
@@ -84,6 +88,15 @@ func SetGlobalBool(name string, value bool) {
 	switch name {
 	case "skipForceFlatten":
 		skipForceFlatten = value
+	default:
+		panic(fmt.Sprintf("BUG: can not set unknown variable %q", name))
+	}
+}
+
+func SetGlobalTime(name string, value time.Duration) {
+	switch name {
+	case "deleteDelay":
+		deleteDelay = value
 	default:
 		panic(fmt.Sprintf("BUG: can not set unknown variable %q", name))
 	}

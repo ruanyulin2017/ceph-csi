@@ -25,11 +25,12 @@ import (
 	"strconv"
 	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/ceph/ceph-csi/internal/controller/utils"
 	"github.com/ceph/ceph-csi/internal/journal"
 	"github.com/ceph/ceph-csi/internal/util/k8s"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 
 	csicommon "github.com/ceph/ceph-csi/internal/csi-common"
 	"github.com/ceph/ceph-csi/internal/util"
@@ -988,7 +989,7 @@ func cleanupRBDImage(ctx context.Context,
 
 	// Deleting rbd image
 	log.DebugLog(ctx, "deleting image %s", rbdVol.RbdImageName)
-	if err = rbdVol.deleteImage(ctx); err != nil {
+	if err = rbdVol.deleteImageDelay(ctx, deleteDelay); err != nil {
 		log.ErrorLog(ctx, "failed to delete rbd image: %s with error: %v",
 			rbdVol, err)
 

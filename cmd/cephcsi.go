@@ -24,6 +24,11 @@ import (
 	"time"
 
 	rbdv1 "github.com/ceph/ceph-csi/api/rbd/v1"
+	volsnapv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/klog/v2"
+
 	"github.com/ceph/ceph-csi/internal/cephfs"
 	"github.com/ceph/ceph-csi/internal/controller"
 	"github.com/ceph/ceph-csi/internal/controller/persistentvolume"
@@ -32,10 +37,6 @@ import (
 	rbddriver "github.com/ceph/ceph-csi/internal/rbd/driver"
 	"github.com/ceph/ceph-csi/internal/util"
 	"github.com/ceph/ceph-csi/internal/util/log"
-	volsnapv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
-	k8sruntime "k8s.io/apimachinery/pkg/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/klog/v2"
 )
 
 const (
@@ -135,8 +136,12 @@ func init() {
 
 	// CSI-Addons configuration
 	flag.StringVar(&conf.CSIAddonsEndpoint, "csi-addons-endpoint", "unix:///tmp/csi-addons.sock", "CSI-Addons endpoint")
+	flag.StringVar(&conf.SecretName, "secretName", "csi-rbd-secret", "name of the secret")
+	flag.StringVar(&conf.SecretNamespace, "secretNamespace", "kube-system", "name of the secret namespace")
 	// 是否计算屏蔽快照大小
 	flag.BoolVar(&conf.DisableSnapSize, "disableSnapSize", false, "disable cal snap size")
+	// image延迟删除
+	flag.DurationVar(&conf.DeleteDelay, "deleteDelay", 7*24*time.Hour, "delete image delay time")
 	klog.InitFlags(nil)
 	if err := flag.Set("logtostderr", "true"); err != nil {
 		klog.Exitf("failed to set logtostderr flag: %v", err)
@@ -240,8 +245,12 @@ func main() {
 
 	case controllerType:
 		cfg := controller.Config{
-			DriverName: dname,
-			Namespace:  conf.DriverNamespace,
+			DriverName:      dname,
+			Namespace:       conf.DriverNamespace,
+			SecretName:      conf.SecretName,
+			SecretNamespace: conf.SecretNamespace,
+			ScheduleSpec:    conf.TrashSchedule,
+			DisableSnapSize: conf.DisableSnapSize,
 		}
 		// initialize all controllers before starting.
 		initControllers()
@@ -261,9 +270,9 @@ func initControllers() {
 	_ = volsnapv1.AddToScheme(scheme)
 	// Add list of controller here.
 	persistentvolume.Init()
-	//rbdbackup.Init()
-	//rbdrestore.Init()
-	//storageclass.Init()
+	// rbdbackup.Init()
+	// rbdrestore.Init()
+	// storageclass.Init()
 	volumesnapshotcontents.Init()
 }
 

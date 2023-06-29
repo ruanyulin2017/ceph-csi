@@ -39,7 +39,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/cloud-provider/volume/helpers"
-	mount "k8s.io/mount-utils"
+	"k8s.io/mount-utils"
 )
 
 const (
@@ -669,6 +669,39 @@ func (rv *rbdVolume) deleteImage(ctx context.Context) error {
 		return err
 	}
 
+	return rv.trashRemoveImage(ctx)
+}
+
+// deleteImageDelay
+func (rv *rbdVolume) deleteImageDelay(ctx context.Context, delay time.Duration) error {
+	image := rv.RbdImageName
+	log.DebugLog(ctx, "rbd: delete %s using mon %s, pool %s ,delay %v", image, rv.Monitors, rv.Pool, delay)
+
+	// Support deleting the older rbd images whose imageID is not stored in omap
+	err := rv.getImageID()
+	if err != nil {
+		return err
+	}
+
+	if rv.isEncrypted() {
+		log.DebugLog(ctx, "rbd: going to remove DEK for %q", rv)
+		if err = rv.encryption.RemoveDEK(rv.VolID); err != nil {
+			log.WarningLog(ctx, "failed to clean the passphrase for volume %s: %s", rv.VolID, err)
+		}
+	}
+
+	err = rv.openIoctx()
+	if err != nil {
+		return err
+	}
+
+	rbdImage := librbd.GetImage(rv.ioctx, image)
+	err = rbdImage.Trash(delay)
+	if err != nil {
+		log.ErrorLog(ctx, "failed to delete rbd image: %s, error: %v", rv, err)
+
+		return err
+	}
 	return rv.trashRemoveImage(ctx)
 }
 
@@ -1353,16 +1386,16 @@ func genVolFromVolumeOptions(
 		rbdVol.NamePrefix = namePrefix
 	}
 
-	//clusterID, err := util.GetClusterID(volOptions)
-	//if err != nil {
+	// clusterID, err := util.GetClusterID(volOptions)
+	// if err != nil {
 	//	return nil, err
-	//}
-	//rbdVol.Monitors, rbdVol.ClusterID, err = util.GetMonsAndClusterID(ctx, clusterID, checkClusterIDMapping)
-	//if err != nil {
+	// }
+	// rbdVol.Monitors, rbdVol.ClusterID, err = util.GetMonsAndClusterID(ctx, clusterID, checkClusterIDMapping)
+	// if err != nil {
 	//	log.ErrorLog(ctx, "failed getting mons (%s)", err)
 	//
 	//	return nil, err
-	//}
+	// }
 
 	rbdVol.RadosNamespace, err = util.GetRadosNamespace(util.CsiConfigFile, rbdVol.ClusterID)
 	if err != nil {
@@ -1434,10 +1467,10 @@ func genSnapFromOptions(ctx context.Context, rbdVol *rbdVolume, snapOptions map[
 	rbdSnap.JournalPool = rbdVol.JournalPool
 	rbdSnap.RadosNamespace = rbdVol.RadosNamespace
 
-	//clusterID, err := util.GetClusterID(snapOptions)
-	//if err != nil {
+	// clusterID, err := util.GetClusterID(snapOptions)
+	// if err != nil {
 	//	return nil, err
-	//}
+	// }
 	rbdSnap.Monitors, rbdSnap.ClusterID, err = util.GetMonsAndClusterID(ctx, rbdVol.ClusterID, false)
 	if err != nil {
 		log.ErrorLog(ctx, "failed getting mons (%s)", err)
