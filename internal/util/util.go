@@ -126,8 +126,8 @@ type Config struct {
 	TrashSchedule string
 	// 是否计算屏蔽快照大小
 	DisableSnapSize bool
-	// 是否关闭image延迟删除
-	DisableDeleteDelay bool
+	// image延迟删除
+	DeleteDelay time.Duration
 	// CSI-Addons endpoint
 	CSIAddonsEndpoint string
 }

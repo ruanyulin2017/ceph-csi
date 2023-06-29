@@ -93,7 +93,7 @@ func (r *Driver) Run(conf *util.Config) {
 	rbd.SetGlobalInt("rbdHardMaxCloneDepth", conf.RbdHardMaxCloneDepth)
 	rbd.SetGlobalInt("rbdSoftMaxCloneDepth", conf.RbdSoftMaxCloneDepth)
 	rbd.SetGlobalBool("skipForceFlatten", conf.SkipForceFlatten)
-	rbd.SetGlobalBool("disableDeleteDelay", conf.DisableDeleteDelay)
+	rbd.SetGlobalTime("deleteDelay", conf.DeleteDelay)
 	rbd.SetGlobalInt("maxSnapshotsOnImage", conf.MaxSnapshotsOnImage)
 	rbd.SetGlobalInt("minSnapshotsOnImageToStartFlatten", conf.MinSnapshotsOnImage)
 	// Create instances of the volume and snapshot journal

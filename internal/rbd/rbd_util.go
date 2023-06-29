@@ -675,9 +675,6 @@ func (rv *rbdVolume) deleteImage(ctx context.Context) error {
 // deleteImageDelay
 func (rv *rbdVolume) deleteImageDelay(ctx context.Context, delay time.Duration) error {
 	image := rv.RbdImageName
-	if disableDeleteDelay {
-		delay = 0
-	}
 	log.DebugLog(ctx, "rbd: delete %s using mon %s, pool %s ,delay %v", image, rv.Monitors, rv.Pool, delay)
 
 	// Support deleting the older rbd images whose imageID is not stored in omap

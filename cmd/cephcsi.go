@@ -140,8 +140,8 @@ func init() {
 	flag.StringVar(&conf.SecretNamespace, "secretNamespace", "kube-system", "name of the secret namespace")
 	// 是否计算屏蔽快照大小
 	flag.BoolVar(&conf.DisableSnapSize, "disableSnapSize", false, "disable cal snap size")
-	// 是否关闭image延迟删除
-	flag.BoolVar(&conf.DisableDeleteDelay, "disableDeleteDelay", false, "disable delete image delay")
+	// image延迟删除
+	flag.DurationVar(&conf.DeleteDelay, "deleteDelay", 7*24*time.Hour, "delete image delay time")
 	klog.InitFlags(nil)
 	if err := flag.Set("logtostderr", "true"); err != nil {
 		klog.Exitf("failed to set logtostderr flag: %v", err)
