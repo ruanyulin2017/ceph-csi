@@ -27,7 +27,7 @@ import (
 	"github.com/ceph/ceph-csi/internal/util/log"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	mount "k8s.io/mount-utils"
+	"k8s.io/mount-utils"
 )
 
 // Driver contains the default identity,node and controller struct.
@@ -93,6 +93,7 @@ func (r *Driver) Run(conf *util.Config) {
 	rbd.SetGlobalInt("rbdHardMaxCloneDepth", conf.RbdHardMaxCloneDepth)
 	rbd.SetGlobalInt("rbdSoftMaxCloneDepth", conf.RbdSoftMaxCloneDepth)
 	rbd.SetGlobalBool("skipForceFlatten", conf.SkipForceFlatten)
+	rbd.SetGlobalBool("disableDeleteDelay", conf.DisableDeleteDelay)
 	rbd.SetGlobalInt("maxSnapshotsOnImage", conf.MaxSnapshotsOnImage)
 	rbd.SetGlobalInt("minSnapshotsOnImageToStartFlatten", conf.MinSnapshotsOnImage)
 	// Create instances of the volume and snapshot journal

@@ -24,12 +24,14 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/ceph/ceph-csi/internal/controller/utils"
 	"github.com/ceph/ceph-csi/internal/journal"
 	"github.com/ceph/ceph-csi/internal/util/k8s"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 
 	csicommon "github.com/ceph/ceph-csi/internal/csi-common"
 	"github.com/ceph/ceph-csi/internal/util"
@@ -46,6 +48,7 @@ const (
 	oneGB             = 1073741824
 	needToUpdateLabel = "ecx.ctcdn.cn/need-to-update"
 	snapshotSizeLabel = "ecx.ctcdn.cn/snapshot-size"
+	deleteDelayTime   = 7 * 24 * time.Hour
 )
 
 // ControllerServer struct of rbd CSI driver with supported methods of CSI
@@ -988,7 +991,7 @@ func cleanupRBDImage(ctx context.Context,
 
 	// Deleting rbd image
 	log.DebugLog(ctx, "deleting image %s", rbdVol.RbdImageName)
-	if err = rbdVol.deleteImage(ctx); err != nil {
+	if err = rbdVol.deleteImageDelay(ctx, deleteDelayTime); err != nil {
 		log.ErrorLog(ctx, "failed to delete rbd image: %s with error: %v",
 			rbdVol, err)
 

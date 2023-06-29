@@ -31,7 +31,7 @@ import (
 	"golang.org/x/sys/unix"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/cloud-provider/volume/helpers"
-	mount "k8s.io/mount-utils"
+	"k8s.io/mount-utils"
 )
 
 // RoundOffVolSize rounds up given quantity up to chunks of MiB/GiB.
@@ -126,6 +126,8 @@ type Config struct {
 	TrashSchedule string
 	// 是否计算屏蔽快照大小
 	DisableSnapSize bool
+	// 是否关闭image延迟删除
+	DisableDeleteDelay bool
 	// CSI-Addons endpoint
 	CSIAddonsEndpoint string
 }

@@ -49,6 +49,9 @@ var (
 
 	// krbd features supported by the loaded driver.
 	krbdFeatures uint
+
+	// disable delete delay
+	disableDeleteDelay bool
 )
 
 // SetGlobalInt provides a way for the rbd-driver to configure global variables
@@ -84,6 +87,8 @@ func SetGlobalBool(name string, value bool) {
 	switch name {
 	case "skipForceFlatten":
 		skipForceFlatten = value
+	case "disableDeleteDelay":
+		disableDeleteDelay = value
 	default:
 		panic(fmt.Sprintf("BUG: can not set unknown variable %q", name))
 	}
