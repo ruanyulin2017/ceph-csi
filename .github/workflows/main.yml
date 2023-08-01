@@ -12,8 +12,12 @@ env:
 
 jobs:
   docker-image:
+    if: startsWith(github.ref_name, vars.PRO_BRANCH) 
+    env:
+      REGISTRY: ${{ vars.DEV_REGISTRY }}
     name: Build x86 and arm Image
-    runs-on: ubuntu-latest
+    runs-on: 
+      group: Default
     steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
@@ -30,8 +34,9 @@ jobs:
     - name: Login to DockerHub
       uses: docker/login-action@v2
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.DEV_HARBOR_USERNAME }}
+        password: ${{ secrets.DEV_HARBOR_TOKEN }}
     - name: Build Docker image
       run: |
         make build-multi-cephcsi
