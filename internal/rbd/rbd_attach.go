@@ -50,7 +50,7 @@ const (
 	rbdUnmapCmdNbdMissingMap  = "rbd-nbd: %s is not mapped"
 	rbdMapConnectionTimeout   = "Connection timed out"
 	rbdMapInvalidArg          = "Invalid argument"
-	rbdMapOptionRxbounce      = "krbd:rxbounce"
+	rbdMapOptionRxbounce      = "rxbounce"
 
 	defaultNbdReAttachTimeout = 300 /* in seconds */
 	defaultNbdIOTimeout       = 0   /* do not abort the requests */
