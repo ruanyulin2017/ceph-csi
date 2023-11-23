@@ -49,6 +49,8 @@ const (
 	rbdUnmapCmdkRbdMissingMap = "rbd: %s: not a mapped image or snapshot"
 	rbdUnmapCmdNbdMissingMap  = "rbd-nbd: %s is not mapped"
 	rbdMapConnectionTimeout   = "Connection timed out"
+	rbdMapInvalidArg          = "Invalid argument"
+	rbdMapOptionRxbounce      = "krbd:rxbounce"
 
 	defaultNbdReAttachTimeout = 300 /* in seconds */
 	defaultNbdIOTimeout       = 0   /* do not abort the requests */
@@ -424,6 +426,7 @@ func createPath(ctx context.Context, volOpt *rbdVolume, device string, cr *util.
 			getCephClientLogFileName(volOpt.VolID, volOpt.LogDir, "rbd-nbd"))
 	}
 
+LOOP:
 	cli := rbd
 	if device != "" {
 		// TODO: use rbd cli for attach/detach in the future
@@ -447,6 +450,10 @@ func createPath(ctx context.Context, volOpt *rbdVolume, device string, cr *util.
 	stdout, stderr, err := util.ExecCommand(ctx, cli, mapArgs...)
 	if err != nil {
 		log.WarningLog(ctx, "rbd: map error %v, rbd output: %s", err, stderr)
+		if !isNbd && strings.Contains(volOpt.MapOptions, rbdMapOptionRxbounce) && strings.Contains(stderr, rbdMapInvalidArg) {
+			volOpt.MapOptions = strings.Replace(volOpt.MapOptions, rbdMapOptionRxbounce, "", -1)
+			goto LOOP
+		}
 		// unmap rbd image if connection timeout
 		if strings.Contains(err.Error(), rbdMapConnectionTimeout) {
 			dArgs := detachRBDImageArgs{
