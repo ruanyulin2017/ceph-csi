@@ -1299,10 +1299,18 @@ func genVolFromVolumeOptions(
 	var minUsed float64 = 100
 	poolList := strings.Split(poolNames, ",")
 	if len(poolList) == 1 {
-		clusterID, err := util.GetClusterID(volOptions)
-		if err != nil {
-			return nil, err
+		var clusterID string
+		if strings.Contains(poolNames, "/") {
+			clusterAndPool := strings.Split(poolNames, "/")
+			clusterID = clusterAndPool[0]
+			poolNames = clusterAndPool[1]
+		} else {
+			clusterID, err = util.GetClusterID(volOptions)
+			if err != nil {
+				return nil, err
+			}
 		}
+
 		rbdVol.Monitors, rbdVol.ClusterID, err = util.GetMonsAndClusterID(ctx, clusterID, checkClusterIDMapping)
 		if err != nil {
 			log.ErrorLog(ctx, "failed getting mons (%s)", err)
