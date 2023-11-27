@@ -404,6 +404,7 @@ func createPath(ctx context.Context, volOpt *rbdVolume, device string, cr *util.
 
 	log.TraceLog(ctx, "rbd: map mon %s", volOpt.Monitors)
 
+LOOP:
 	mapArgs := []string{
 		"--id", cr.ID,
 		"-m", volOpt.Monitors,
@@ -426,7 +427,6 @@ func createPath(ctx context.Context, volOpt *rbdVolume, device string, cr *util.
 			getCephClientLogFileName(volOpt.VolID, volOpt.LogDir, "rbd-nbd"))
 	}
 
-LOOP:
 	cli := rbd
 	if device != "" {
 		// TODO: use rbd cli for attach/detach in the future
