@@ -53,6 +53,9 @@ var (
 
 	// delete delay
 	deleteDelay time.Duration
+
+	// public map options
+	globalMapOptions string
 )
 
 // SetGlobalInt provides a way for the rbd-driver to configure global variables
@@ -73,6 +76,15 @@ func SetGlobalInt(name string, value uint) {
 		minSnapshotsOnImageToStartFlatten = value
 	case "krbdFeatures":
 		krbdFeatures = value
+	default:
+		panic(fmt.Sprintf("BUG: can not set unknown variable %q", name))
+	}
+}
+
+func SetGlobalString(name string, value string) {
+	switch name {
+	case "mapOptions":
+		globalMapOptions = value
 	default:
 		panic(fmt.Sprintf("BUG: can not set unknown variable %q", name))
 	}

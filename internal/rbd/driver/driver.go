@@ -154,6 +154,7 @@ func (r *Driver) Run(conf *util.Config) {
 			log.FatalLogMsg(err.Error())
 		}
 		rbd.SetGlobalInt("krbdFeatures", krbdFeatures)
+		rbd.SetGlobalString("mapOptions", conf.MapOptions)
 	}
 
 	if conf.IsControllerServer {

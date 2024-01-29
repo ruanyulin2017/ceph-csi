@@ -265,7 +265,8 @@ func parseMapOptions(mapOptions string) (string, string, error) {
 // getMapOptions is a wrapper func, calls parse map/unmap funcs and feeds the
 // rbdVolume object.
 func getMapOptions(req *csi.NodeStageVolumeRequest, rv *rbdVolume) error {
-	krbdMapOptions, nbdMapOptions, err := parseMapOptions(req.GetVolumeContext()["mapOptions"])
+	mapOptions := req.GetVolumeContext()["mapOptions"] + ";" + globalMapOptions
+	krbdMapOptions, nbdMapOptions, err := parseMapOptions(mapOptions)
 	if err != nil {
 		return err
 	}

@@ -142,6 +142,8 @@ func init() {
 	flag.BoolVar(&conf.DisableSnapSize, "disableSnapSize", false, "disable cal snap size")
 	// image延迟删除
 	flag.DurationVar(&conf.DeleteDelay, "deleteDelay", 7*24*time.Hour, "delete image delay time")
+	// 全局挂载参数
+	flag.StringVar(&conf.MapOptions, "mapOptions", "", "public map options")
 	klog.InitFlags(nil)
 	if err := flag.Set("logtostderr", "true"); err != nil {
 		klog.Exitf("failed to set logtostderr flag: %v", err)

@@ -130,6 +130,8 @@ type Config struct {
 	DeleteDelay time.Duration
 	// CSI-Addons endpoint
 	CSIAddonsEndpoint string
+	// public map options
+	MapOptions string
 }
 
 // ValidateDriverName validates the driver name.
