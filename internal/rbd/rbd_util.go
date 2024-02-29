@@ -28,7 +28,10 @@ import (
 	"strings"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/ceph/ceph-csi/internal/util"
+	"github.com/ceph/ceph-csi/internal/util/k8s"
 	"github.com/ceph/ceph-csi/internal/util/log"
 
 	"github.com/ceph/go-ceph/rados"
@@ -1284,10 +1287,29 @@ func genVolFromVolumeOptions(
 	volOptions, credentials map[string]string,
 	disableInUseChecks, checkClusterIDMapping bool, cr *util.Credentials) (*rbdVolume, error) {
 	var (
-		ok         bool
-		err        error
-		namePrefix string
+		ok           bool
+		err          error
+		namePrefix   string
+		pvcClusterId string
 	)
+
+	pvcName := volOptions["csi.storage.k8s.io/pvc/name"]
+	pvcNamespace := volOptions["csi.storage.k8s.io/pvc/namespace"]
+	if pvcName != "" && pvcNamespace != "" {
+		c, err := k8s.NewK8sClient()
+		if err != nil {
+			return nil, fmt.Errorf("can not get pvc %q, namespace: %q, failed to "+
+				"connect to Kubernetes: %w", pvcName, pvcNamespace, err)
+		}
+		pvcObj, err := c.CoreV1().PersistentVolumeClaims(pvcNamespace).Get(ctx, pvcName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		if pvcObj.Labels != nil {
+			pvcClusterId = pvcObj.Labels["ecx.io/clusterID"]
+		}
+	}
+	log.UsefulLog(ctx, "The cluster ID specified by the PVC: %s", pvcClusterId)
 
 	rbdVol := &rbdVolume{}
 	poolNames, ok := volOptions["pool"]
@@ -1311,6 +1333,10 @@ func genVolFromVolumeOptions(
 			}
 		}
 
+		if pvcClusterId != "" && clusterID != pvcClusterId {
+			return nil, fmt.Errorf("cluster id[%s] not found in sc", pvcClusterId)
+		}
+
 		rbdVol.Monitors, rbdVol.ClusterID, err = util.GetMonsAndClusterID(ctx, clusterID, checkClusterIDMapping)
 		if err != nil {
 			log.ErrorLog(ctx, "failed getting mons (%s)", err)
@@ -1332,6 +1358,9 @@ func genVolFromVolumeOptions(
 			} else {
 				clusterId = poolInfos[0]
 				poolName = poolInfos[1]
+			}
+			if pvcClusterId != "" && clusterId != pvcClusterId {
+				continue
 			}
 			monitors, clusterId, err := util.GetMonsAndClusterID(ctx, clusterId, checkClusterIDMapping)
 			if err != nil {
@@ -1387,6 +1416,10 @@ func genVolFromVolumeOptions(
 				rbdVol.ClusterID = clusterId
 			}
 		}
+	}
+
+	if rbdVol.Pool == "" || rbdVol.Monitors == "" || rbdVol.ClusterID == "" {
+		return nil, errors.New("get pool failed, pool/monitors/clusterID empty")
 	}
 
 	rbdVol.DataPool = volOptions["dataPool"]
